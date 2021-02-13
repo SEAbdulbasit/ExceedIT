@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_activities"
+        android:icon="@drawable/ic_clipboard"
+        android:title="Activities" />
+
+    <item
+        android:id="@+id/menu_graph"
+        android:icon="@drawable/ic_graph"
+        android:title="Measures" />
+    <item
+        android:id="@+id/menu_analytics"
+        android:icon="@drawable/ic_bar_chart"
+        android:title="Analytics" />
+    <item
+        android:id="@+id/menu_profile"
+        android:icon="@drawable/ic_user"
+        android:title="Profile" />
+</menu>

@@ -57,7 +57,6 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="30dp"
             app:layout_constraintTop_toBottomOf="@+id/textView"
-            app:tabIndicator="@drawable/ic_selected_tab"
             tools:layout_editor_absoluteX="30dp">
 
             <com.google.android.material.tabs.TabItem
@@ -259,13 +258,21 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginTop="10dp"
+            android:layout_marginBottom="5dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavigationBar"
             app:layout_constraintEnd_toEndOf="@id/guideline2"
             app:layout_constraintStart_toStartOf="@id/guideline"
             app:layout_constraintTop_toBottomOf="@id/infoView"
-
             tools:listitem="@layout/holder_expandable_list" />
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigationBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:labelVisibilityMode="labeled"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:menu="@menu/bottom_navigation_menu" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
