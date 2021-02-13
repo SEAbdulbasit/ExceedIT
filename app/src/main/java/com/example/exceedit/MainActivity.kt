@@ -4,38 +4,140 @@ import android.graphics.PointF
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.example.exceedit.adapter.ExpandableListAdapter
+import com.example.exceedit.customview.SmoothLineChart
+import com.example.exceedit.databinding.ActivityMainBinding
+import com.example.exceedit.model.WeeklyScoreDataModel
+import com.example.exceedit.model.getDataList
+import com.example.exceedit.viewmodel.MainViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.michalsvec.singlerowcalendar.calendar.CalendarChangesObserver
 import com.michalsvec.singlerowcalendar.calendar.CalendarViewManager
 import com.michalsvec.singlerowcalendar.calendar.SingleRowCalendar
 import com.michalsvec.singlerowcalendar.calendar.SingleRowCalendarAdapter
 import com.michalsvec.singlerowcalendar.selection.CalendarSelectionManager
 import com.michalsvec.singlerowcalendar.utils.DateUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
     private val calendar = Calendar.getInstance()
-    private var currentMonth = 0
+    val calendar2: Calendar = Calendar.getInstance()
 
+    private var isFirstDataLoading = true
+    private lateinit var binding: ActivityMainBinding
+    private var currentMonth = 0
+    private lateinit var singleRowCalendar: SingleRowCalendar
+    private lateinit var smoothLineChart: SmoothLineChart
+    private var persons: List<WeeklyScoreDataModel>? = null
+
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding.viewModel = viewModel
+        binding.lifecycleOwner = this
 
-        // set current date to calendar and current month to currentMonth variable
         calendar.time = Date()
         currentMonth = calendar[Calendar.MONTH]
 
         // enable white status bar with black icons
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
             window.statusBarColor = getColor(R.color.purple_500)
         }
 
+        initializeCalendar()
+        initializeExpandableList()
+        initializeChart()
+        setClickListeners()
+
+        retrieveFilesAndPopulateData()
+    }
+
+    private fun retrieveFilesAndPopulateData() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val gson = Gson()
+            val tokenType = object : TypeToken<List<WeeklyScoreDataModel>>() {}.type
+            persons = gson.fromJson(retrieveFiles(), tokenType)
+            withContext(Dispatchers.Main) {
+                persons?.get(0)?.let { submitData(it) }
+            }
+        }
+    }
+
+    private fun submitData(dataModel: WeeklyScoreDataModel) {
+        binding.textView4.text = dataModel.efforts
+        binding.tvEffortsValue.text = dataModel.activities
+        binding.tvInProgressValues.text = dataModel.inProgress
+
+        var xIndex = 15
+        val array = mutableListOf<PointF>()
+        dataModel.list.forEach {
+            array.add(PointF(xIndex.toFloat(), it.toFloat() * 10))
+            xIndex += 15
+        }
+        //smoothLineChart.itemSize =45f
+        smoothLineChart.setData(
+            array.toTypedArray()
+        )
+    }
+
+    private fun setClickListeners() {
+        binding.btnRight.setOnClickListener {
+            if (calendar.timeInMillis > calendar2.timeInMillis) {
+                Toast.makeText(this, "No future dates", Toast.LENGTH_LONG).show()
+            } else {
+                singleRowCalendar.setDates(getDatesOfNextMonth())
+                submitDateForLoading()
+            }
+        }
+
+        binding.btnLeft.setOnClickListener {
+            singleRowCalendar.setDates(getDatesOfPreviousMonth())
+            submitDateForLoading()
+        }
+    }
+
+    private fun submitDateForLoading() {
+        if (isFirstDataLoading) {
+            isFirstDataLoading = false
+            submitData(persons!![1])
+        } else {
+            isFirstDataLoading = true
+            submitData(persons!![0])
+        }
+    }
+
+    private fun initializeChart() {
+        smoothLineChart = binding.smoothChart
+        //SmoothLineChart.CHART_COLOR = ContextCompat.getColor(this, R.color.purple_500)
+        //smoothLineChart.itemSize = 45f
+
+    }
+
+    private fun initializeExpandableList() {
+        val adapter = ExpandableListAdapter()
+        findViewById<RecyclerView>(R.id.rvExpandableList).adapter = adapter
+        adapter.submitList(mutableListOf(1, 2, 3))
+    }
+
+    private fun initializeCalendar() {
         // calendar view manager is responsible for our displaying logic
         val myCalendarViewManager = object :
             CalendarViewManager {
@@ -46,27 +148,14 @@ class MainActivity : AppCompatActivity() {
             ): Int {
                 // set date to calendar according to position where we are
                 val cal = Calendar.getInstance()
-                val cal2 = Calendar.getInstance()
                 cal.time = date
-                /*// if item is selected we return this layout items
-                // in this example. monday, wednesday and friday will have special item views and other days
-                // will be using basic item view
-                return if (isSelected)
-                    when (cal[Calendar.DAY_OF_WEEK]) {
-
-                        else -> R.layout.selected_calendar_item
-                    }
+                return if (cal.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR) &&
+                    cal.get(Calendar.MONTH) == calendar2.get(Calendar.MONDAY) &&
+                    cal.get(Calendar.DAY_OF_YEAR) == calendar2.get(Calendar.DAY_OF_YEAR)
+                )
+                    R.layout.today_calendar_item
                 else
-                // here we return items which are not selected
-                    when (cal[Calendar.DAY_OF_WEEK]) {
-                        else -> */
-
-                return R.layout.calendar_item
-
-                ///}
-
-                // NOTE: if we don't want to do it this way, we can simply change color of background
-                // in bindDataToCalendarView method
+                    R.layout.calendar_item
             }
 
             override fun bindDataToCalendarView(
@@ -84,18 +173,13 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
-
         // using calendar changes observer we can track changes in calendar
         val myCalendarChangesObserver = object :
             CalendarChangesObserver {
             // you can override more methods, in this example we need only this one
             override fun whenSelectionChanged(isSelected: Boolean, position: Int, date: Date) {
-                //   tvDate.text = "${DateUtils.getMonthName(date)}, ${DateUtils.getDayNumber(date)} "
-                //    tvDay.text = DateUtils.getDayName(date)
                 super.whenSelectionChanged(isSelected, position, date)
             }
-
-
         }
 
         // selection manager is responsible for managing selection
@@ -105,7 +189,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // here we init our calendar, also you can set more properties if you haven't specified in XML layout
-        val singleRowCalendar =
+        singleRowCalendar =
             findViewById<SingleRowCalendar>(R.id.main_single_row_calendar).apply {
                 calendarViewManager = myCalendarViewManager
                 calendarChangesObserver = myCalendarChangesObserver
@@ -114,38 +198,9 @@ class MainActivity : AppCompatActivity() {
                 init()
             }
 
-        findViewById<Button>(R.id.btnRight).setOnClickListener {
-            singleRowCalendar.setDates(getDatesOfNextMonth())
-        }
-
-        findViewById<Button>(R.id.btnLeft).setOnClickListener {
-            singleRowCalendar.setDates(getDatesOfPreviousMonth())
-        }
-
-
-        val chart = findViewById<View>(R.id.smoothChart) as SmoothLineChart
-        chart.setData(
-            arrayOf(
-                PointF(15F, 3F),  // {x, y}
-                PointF(20F, 1F),
-                PointF(25F, 7F),
-                PointF(30F, 4F),
-                PointF(35F, 5F),
-                PointF(40F, 5F),
-                PointF(45F, 1F),
-            )
-        )
-
-        /*  val chartES = findViewById<View>(R.id.smoothChartES) as SmoothLineChartEquallySpaced
-          chartES.setData(floatArrayOf(15f, 21f, 9f, 21f, 25f, 35f, 24f, 28f))*/
-
-        val adapter = ExpandableListAdapter()
-        findViewById<RecyclerView>(R.id.rvExpandableList).adapter = adapter
-        adapter.submitList(mutableListOf(1, 2, 3))
     }
 
     private fun getDatesOfNextMonth(): List<Date> {
-
         if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
             calendar.add(Calendar.DAY_OF_YEAR, 6)
         }
@@ -164,7 +219,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getDatesOfPreviousMonth(): List<Date> {
-
         if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
             calendar.add(Calendar.DAY_OF_YEAR, -6)
         }
@@ -186,7 +240,6 @@ class MainActivity : AppCompatActivity() {
         return getDates(mutableListOf())
     }
 
-
     private fun getDates(list: MutableList<Date>): List<Date> {
         calendar.set(Calendar.MONTH, currentMonth)
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY)
@@ -200,5 +253,15 @@ class MainActivity : AppCompatActivity() {
         return list
     }
 
+    private fun retrieveFiles(): String? {
+        val jsonString: String
+        try {
+            jsonString = this.assets.open("jsonListing.json").bufferedReader().use { it.readText() }
+        } catch (ioException: IOException) {
+            ioException.printStackTrace()
+            return null
+        }
+        return jsonString
+    }
 
 }

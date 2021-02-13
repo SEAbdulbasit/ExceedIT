@@ -1,4 +1,4 @@
-package com.example.exceedit
+package com.example.exceedit.adapter
 
 import android.transition.TransitionInflater
 import android.transition.TransitionManager
@@ -8,13 +8,15 @@ import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.exceedit.R
 import com.example.exceedit.databinding.HolderExpandableListBinding
+import com.example.exceedit.executeAfter
 
-class ExpandableListAdapter() :
+class ExpandableListAdapter :
     ListAdapter<Int, ExpandableListAdapter.ViewHolder>(DiffCallBack) {
     private var expandedIds = mutableSetOf<Int>()
 
-    inner class ViewHolder(val binding: HolderExpandableListBinding) :
+    inner class ViewHolder(private val binding: HolderExpandableListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(
             holder: ViewHolder,

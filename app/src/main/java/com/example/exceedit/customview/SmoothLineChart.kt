@@ -1,4 +1,4 @@
-package com.example.exceedit
+package com.example.exceedit.customview
 
 import android.content.Context
 import android.graphics.*
@@ -13,10 +13,11 @@ class SmoothLineChart @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
     private val mPaint: Paint
     private val mPath: Path
+    var itemSize: Float? = null
     private val mCircleSize: Float
     private val mStrokeSize: Float
     private val mBorder: Float
-    private var mValues: Array<PointF>?=null
+    private var mValues: Array<PointF>? = null
     private val mMinY = 0f
     private var mMaxY = 0f
     fun setData(values: Array<PointF>?) {
@@ -41,7 +42,7 @@ class SmoothLineChart @JvmOverloads constructor(
         val height = measuredHeight - 2 * mBorder
         val width = measuredWidth - 2 * mBorder
         val left = mValues!![0].x
-        val right = mValues!![mValues!!.size - 1].x
+        val right = itemSize ?: mValues!![mValues!!.size - 1].x
         val dX: Float = if (right - left > 0) right - left else 2F
         val dY: Float = if (mMaxY - mMinY > 0) mMaxY - mMinY else 2F
         mPath.reset()
@@ -127,7 +128,7 @@ class SmoothLineChart @JvmOverloads constructor(
     }
 
     companion object {
-        private const val CHART_COLOR = -0xff6634
+        var CHART_COLOR = -0xff6634
         private const val CIRCLE_SIZE = 8
         private const val STROKE_SIZE = 2
         private const val SMOOTHNESS = 0.3f // the higher the smoother, but don't go over 0.5
