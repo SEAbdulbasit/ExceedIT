@@ -33,7 +33,7 @@ class ExpandableListAdapter :
                     expandedIds.add(item)
                 }
                 val transition = TransitionInflater.from(binding.textView5.context)
-                    .inflateTransition(R.transition.codelab_toggle)
+                    .inflateTransition(R.transition.item_toggle)
                 TransitionManager.beginDelayedTransition(parent, transition)
                 holder.binding.executeAfter {
                     isExpanded = !expanded

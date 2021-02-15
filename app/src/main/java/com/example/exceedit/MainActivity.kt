@@ -8,7 +8,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +15,6 @@ import com.example.exceedit.adapter.ExpandableListAdapter
 import com.example.exceedit.customview.SmoothLineChart
 import com.example.exceedit.databinding.ActivityMainBinding
 import com.example.exceedit.model.WeeklyScoreDataModel
-import com.example.exceedit.model.getDataList
 import com.example.exceedit.viewmodel.MainViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
